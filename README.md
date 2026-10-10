@@ -1,83 +1,98 @@
 # London Bike Share Pipeline (Version 2)
 
-A production-grade, end-to-end data engineering portfolio project built for Data School applications. This pipeline extracts live urban mobility data from the Transport for London (TfL) BikePoint API, archives raw snapshots for data lineage, transforms the nested payload using Python and DuckDB (OLAP storage), and exports a high-performance web bridge JSON to power an interactive Leaflet.js web dashboard with real-time system metrics.
+## 👋 About Me & Project Overview
+
+Hi, I'm Ayodele! I'm an aspiring Data Engineer applying to Data School. I built this project to showcase my approach to solving real-world data engineering problems—from fetching messy raw API data and structuring it into an analytical store to delivering an interactive dashboard for end users.
+
+This pipeline tracks live cycle hire availability across London using the Transport for London (TfL) BikePoint API. It handles live data extraction, archives timestamped raw JSON snapshots for auditability, transforms nested API payloads using Python and DuckDB, and powers a custom Leaflet.js web dashboard with live system metrics.
 
 ---
 
-## 📂 Project Directory Structure
+## 🎯 Target Audience & What Problem This Solves
 
-The project is organized into a clean, modular structure under the root directory:
+* **The Audience:** London commuters, local cyclists, and urban mobility analysts needing clear, real-time visibility into bike dock availability.
+* **The Problem:** Standard transit apps often show static or isolated station data. This tool aggregates city-wide inventory into a central OLAP database, computing key metrics (total available bikes, empty docks, total active stations) alongside a visual map and searchable station directory.
+
+---
+
+## 📂 Repository Structure
+
+The project follows a clean, modular structure:
 
 * **`Version 2/`**
   * **`app/`**
-    * `index.html` - Interactive frontend dashboard featuring system-wide metric cards, live table inventory, and Leaflet.js mapping.
-    * `dashboard_data.json` - Web bridge payload exported from the OLAP database.
+    * `index.html` - Interactive web dashboard with metric cards, searchable data table, and Leaflet.js map.
+    * `dashboard_data.json` - Web bridge JSON export generated directly from DuckDB.
   * **`data/raw/`**
-    * Timestamped raw JSON snapshots ensuring full data reproducibility and auditability.
+    * Immutable, timestamped JSON snapshots collected from the TfL API.
   * **`python/`**
-    * `fetch_bikes.py` - Data extraction script connecting to the live TfL REST API.
+    * `fetch_bikes.py` - Ingestion script connecting to the live TfL REST endpoint.
   * **`sql/`**
-    * `transform_bikes.py` - ETL script processing raw JSON into a structured table.
-    * `export_for_web.py` - Exporter script querying DuckDB to generate the web bridge JSON payload.
-  * `bikes.duckdb` - Local columnar OLAP database store housing the `fact_bike_stations` table.
+    * `transform_bikes.py` - ETL script parsing raw JSON into structured relational tables.
+    * `export_for_web.py` - Exporter script querying DuckDB to create the dashboard data payload.
+  * `bikes.duckdb` - Local columnar OLAP database containing the `fact_bike_stations` table.
 
 ---
 
-## 🚀 Pipeline Architecture & Workflow
+## 🚀 Pipeline Architecture & How It Works
 
-1. **Extraction (`python/fetch_bikes.py`)**: Connects to the live TfL BikePoint API endpoint, serializes the response, and saves a timestamped raw snapshot inside `data/raw/`.
-2. **Transformation & Loading (`sql/transform_bikes.py`)**: Automatically detects the latest raw snapshot, parses nested API properties via Python and Pandas, and loads clean tabular data into a `fact_bike_stations` table inside the local `bikes.duckdb` OLAP database.
-3. **Web Bridge Export (`sql/export_for_web.py`)**: Queries DuckDB to compute system-wide aggregations (Total Stations, Available Bikes, Empty Docks) and packages row-level inventory into `dashboard_data.json`.
-4. **Visualization (`app/index.html`)**: Asynchronously consumes the JSON payload via the Fetch API, plotting interactive markers on a Leaflet.js map and populating a searchable station directory table.
+1. **Extraction (`python/fetch_bikes.py`)**: Connects to TfL's BikePoint REST API and saves a raw timestamped JSON snapshot to `data/raw/`.
+2. **Transformation (`sql/transform_bikes.py`)**: Automatically detects the latest raw snapshot, parses nested property arrays using Python and Pandas, and loads clean records into the `fact_bike_stations` table inside `bikes.duckdb`.
+3. **Web Bridge Export (`sql/export_for_web.py`)**: Runs SQL queries against DuckDB to calculate overall network aggregates and exports the station-level detail to `app/dashboard_data.json`.
+4. **Presentation (`app/index.html`)**: A lightweight frontend application that fetches `dashboard_data.json` asynchronously, plotting station markers on a map and filling out the interactive table.
 
 ---
 
-## 💻 How to Run the Project & View Locally
+## 💻 How to Run the Project Locally
 
-To execute this data pipeline and launch the dashboard on your local machine, open your **PowerShell** terminal and follow these steps sequentially:
+To run the complete pipeline and view the dashboard locally, open PowerShell and run these steps in order:
 
-1. Navigate into your project directory:
+1. Navigate to the project directory:
 ```powershell
 cd "Version 2"
 ```
 
-2. Execute the Data Extraction Script:
-*(Connects to the live TfL API and saves a raw timestamped JSON snapshot)*
+2. Fetch fresh TfL data (Optional - requires an active internet connection):
 ```powershell
 python python/fetch_bikes.py
 ```
 
-3. Run the Transformation Script:
-*(Parses the raw JSON and loads clean tabular records into your DuckDB database)*
+3. Parse the raw JSON into DuckDB:
 ```powershell
 python sql/transform_bikes.py
 ```
 
-4. Export the Web Bridge Data:
-*(Queries DuckDB to compute system aggregates and generate the frontend JSON payload)*
+4. Generate the dashboard JSON payload:
 ```powershell
 python sql/export_for_web.py
 ```
 
-5. Start the Local Web Server:
+5. Launch a local web server:
 ```powershell
 python -m http.server 8000
 ```
 
-6. Open the Local Run Link:
-Once the server is running, open your web browser and navigate to:
+6. Open your browser and go to:
 👉 **`http://localhost:8000/app/index.html`**
 
 ---
 
-## 💡 Key Design Decisions & Learnings
+## 💡 Key Technical Decisions
 
-* **Why DuckDB?** Chosen for zero-configuration, lightning-fast in-process analytical querying over raw data payloads, mirroring modern columnar data warehouse patterns.
-* **Decoupled Architecture:** Separating the ingestion layer (`python/`), OLAP storage (`bikes.duckdb`), and presentation layer (`app/`) ensures modularity, scalability, and clean separation of concerns.
-* **Real-World Relevance:** Using live TfL transit data grounds technical data engineering in a tangible, commercial smart-city context.
+* **Why DuckDB?** I chose DuckDB because it offers fast, zero-config in-process analytical querying over raw JSON data, mirroring modern columnar data warehouse environments.
+* **Raw Snapshot Archiving:** Storing raw JSON files in `data/raw/` ensures full idempotency and reproducibility. Anyone can clone this repository and rebuild the database locally without needing network access.
+* **Decoupled Architecture:** Keeping ingestion, transformation, storage, and visualization strictly separated makes the pipeline modular, easier to debug, and simple to expand.
 
 ---
 
-## Where AI helped
+## 🔮 What I Would Explore Next
 
-AI served as a co-pilot throughout the build process. AI assisted with researching API payload structures, designing the decoupled ingestion-to-OLAP-to-frontend workflow, and troubleshooting Python/DuckDB integration syntax. Human oversight focused on system design choices, defining core project requirements, reviewing code, verifying pipeline outputs, and validating the final dashboard functionality.
+* **Historical Trend Analysis:** Use the growing archive of timestamped JSON snapshots to analyze station usage patterns across peak commuting hours.
+* **Automated Orchestration:** Set up a lightweight scheduler (like GitHub Actions or a local cron job) to pull fresh TfL snapshots automatically throughout the day.
+* **Enhanced Spatial Filters:** Add client-side radius or borough filtering to allow users to focus on specific London neighborhoods.
+
+---
+
+## 🤖 Where AI Helped
+
+I used AI as a technical collaborator throughout this project. It helped me explore TfL API structure quirks, troubleshoot DuckDB integration syntax, and refine the decoupled pipeline design. My role focused on defining project requirements, making architectural choices, writing and verifying the Python/SQL scripts, and ensuring the final dashboard delivered clear, accurate metrics.
