@@ -1,12 +1,12 @@
 # London Bike Share Pipeline (Version 2)
 
-A production-grade, end-to-end data engineering portfolio project built for data school applications. This pipeline extracts live urban mobility data from the Transport for London (TfL) BikePoint API, archives raw snapshots for data lineage, transforms the nested payload using Python and DuckDB (OLAP storage), and exports a high-performance web bridge JSON to power an interactive Leaflet.js web dashboard with real-time system metrics.
+A production-grade, end-to-end data engineering portfolio project built for Data School applications. This pipeline extracts live urban mobility data from the Transport for London (TfL) BikePoint API, archives raw snapshots for data lineage, transforms the nested payload using Python and DuckDB (OLAP storage), and exports a high-performance web bridge JSON to power an interactive Leaflet.js web dashboard with real-time system metrics.
 
 ---
 
 ## 📂 Project Directory Structure
 
-The project is organized into a clean, modular structure under the `Version 2` root directory:
+The project is organized into a clean, modular structure under the root directory:
 
 * **`Version 2/`**
   * **`app/`**
@@ -34,26 +34,39 @@ The project is organized into a clean, modular structure under the `Version 2` r
 
 ## 💻 How to Run the Project & View Locally
 
-To execute this data pipeline and launch the dashboard on your local machine, open your PowerShell terminal and follow these steps sequentially:
+To execute this data pipeline and launch the dashboard on your local machine, open your **PowerShell** terminal and follow these steps sequentially:
 
 1. Navigate into your project directory:
-   cd "Version 2"
+```powershell
+cd "Version 2"
+```
 
 2. Execute the Data Extraction Script:
-   python python/fetch_bikes.py
+*(Connects to the live TfL API and saves a raw timestamped JSON snapshot)*
+```powershell
+python python/fetch_bikes.py
+```
 
 3. Run the Transformation Script:
-   python sql/transform_bikes.py
+*(Parses the raw JSON and loads clean tabular records into your DuckDB database)*
+```powershell
+python sql/transform_bikes.py
+```
 
 4. Export the Web Bridge Data:
-   python sql/export_for_web.py
+*(Queries DuckDB to compute system aggregates and generate the frontend JSON payload)*
+```powershell
+python sql/export_for_web.py
+```
 
 5. Start the Local Web Server:
-   python -m http.server 8000
+```powershell
+python -m http.server 8000
+```
 
 6. Open the Local Run Link:
-   Once the server is running, open your web browser and go to:
-   http://localhost:8000/app/index.html
+Once the server is running, open your web browser and navigate to:
+👉 **`http://localhost:8000/app/index.html`**
 
 ---
 
@@ -62,3 +75,9 @@ To execute this data pipeline and launch the dashboard on your local machine, op
 * **Why DuckDB?** Chosen for zero-configuration, lightning-fast in-process analytical querying over raw data payloads, mirroring modern columnar data warehouse patterns.
 * **Decoupled Architecture:** Separating the ingestion layer (`python/`), OLAP storage (`bikes.duckdb`), and presentation layer (`app/`) ensures modularity, scalability, and clean separation of concerns.
 * **Real-World Relevance:** Using live TfL transit data grounds technical data engineering in a tangible, commercial smart-city context.
+
+---
+
+## Where AI helped
+
+AI served as a co-pilot throughout the build process. AI assisted with researching API payload structures, designing the decoupled ingestion-to-OLAP-to-frontend workflow, and troubleshooting Python/DuckDB integration syntax. Human oversight focused on system design choices, defining core project requirements, reviewing code, verifying pipeline outputs, and validating the final dashboard functionality.
