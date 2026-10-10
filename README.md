@@ -45,7 +45,17 @@ The project follows a clean, modular structure:
 
 ## 💻 How to Run the Project Locally
 
-To run the complete pipeline and view the dashboard locally, open PowerShell and run these steps in order:
+### 🛠️ Prerequisites & Installation
+
+Ensure you have Python 3.8+ installed. Install the required Python packages by running:
+
+```powershell
+pip install pandas duckdb requests
+```
+
+### 🏃 Step-by-Step Execution
+
+Open PowerShell and run these steps in order:
 
 1. Navigate to the project directory:
 ```powershell
