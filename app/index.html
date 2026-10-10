@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>London Bike Share Dashboard v2 | The Data School Portfolio</title>
+    
+    <!-- 
+        Technical Documentation References:
+        - W3Schools HTML/CSS Flexbox: https://www.w3schools.com/css/css3_flexbox.asp
+        - W3Schools CSS Tables Styling: https://www.w3schools.com/css/css_table.asp
+        - Leaflet.js Mapping Library: https://leafletjs.com/
+    -->
+
+    <!-- Leaflet CSS for Interactive Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .main-wrapper {
+            max-width: 1350px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 280px;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+        .content-area {
+            flex: 1;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #002b49;
+            margin-bottom: 5px;
+            font-size: 1.6em;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 20px;
+        }
+        .metrics-grid {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .card {
+            flex: 1;
+            background: #0073e6;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .card.secondary {
+            background: #002b49;
+        }
+        .card.accent {
+            background: #00875a;
+        }
+        .card h3 {
+            margin: 0 0 5px 0;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            opacity: 0.85;
+        }
+        .card h2 {
+            margin: 0;
+            font-size: 1.4em;
+        }
+        #map {
+            width: 100%;
+            height: 400px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        .filter-group {
+            margin-bottom: 15px;
+        }
+        .filter-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #002b49;
+        }
+        .filter-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9em;
+        }
+        th {
+            background-color: #002b49;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .footer {
+            margin-top: 25px;
+            text-align: center;
+            color: #888;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <!-- Sidebar Controls / Filters -->
+        <div class="sidebar">
+            <h2>Filters & Controls</h2>
+            <p style="font-size: 0.85em; color: #666;">Version 2 controls wired to your DuckDB OLAP model.</p>
+            
+            <div class="filter-group">
+                <label for="search-box">Search Station Name:</label>
+                <input type="text" id="search-box" placeholder="e.g. Waterloo..." onkeyup="filterData()">
+            </div>
+
+            <div class="filter-group">
+                <label>Architecture:</label>
+                <input type="text" value="TfL API -> DuckDB -> JSON" disabled style="background: #e9ecef; color: #555;">
+            </div>
+        </div>
+
+        <!-- Main Dashboard Content Area -->
+        <div class="content-area">
+            <h1>London Bike Share Pipeline (v2)</h1>
+            <div class="subtitle">Live System Availability Dashboard &bull; The Data School Portfolio</div>
+
+            <!-- Enhanced Version 2 Metrics Row -->
+            <div class="metrics-grid">
+                <div class="card">
+                    <h3>Total Stations</h3>
+                    <h2 id="total-count">Loading...</h2>
+                </div>
+                <div class="card secondary">
+                    <h3>Available Bikes</h3>
+                    <h2 id="total-bikes">Loading...</h2>
+                </div>
+                <div class="card accent">
+                    <h3>Empty Docks</h3>
+                    <h2 id="total-docks">Loading...</h2>
+                </div>
+            </div>
+
+            <!-- Interactive Map Container -->
+            <div id="map"></div>
+
+            <h2>Live Station Inventory Directory</h2>
+            <p style="font-size: 0.9em; color: #666;">Real-time breakdown of bike availability and dock capacity per station:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Station ID</th>
+                        <th>Station Name</th>
+                        <th>Bikes Available</th>
+                        <th>Empty Docks</th>
+                        <th>Total Capacity</th>
+                    </tr>
+                </thead>
+                <tbody id="station-table-body">
+                    <tr><td colspan="5">Loading data...</td></tr>
+                </tbody>
+            </table>
+
+            <div class="footer">
+                Built with Python, DuckDB, Leaflet.js, and HTML/CSS
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS Library -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        let allStations = [];
+        let map;
+        let markersLayer;
+
+        function initMap() {
+            map = L.map('map').setView([51.5074, -0.1278], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            markersLayer = L.layerGroup().addTo(map);
+        }
+
+        function renderDashboard(stations) {
+            const tableBody = document.getElementById('station-table-body');
+            tableBody.innerHTML = "";
+            markersLayer.clearLayers();
+
+            stations.forEach(station => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${station.station_id}</td>
+                    <td><b>${station.station_name}</b></td>
+                    <td><span style="color: #0073e6; font-weight: bold;">${station.bikes_available}</span></td>
+                    <td><span style="color: #00875a; font-weight: bold;">${station.empty_docks}</span></td>
+                    <td>${station.total_docks}</td>
+                `;
+                tableBody.appendChild(row);
+
+                if (station.latitude && station.longitude) {
+                    const marker = L.marker([station.latitude, station.longitude])
+                        .bindPopup(`<b>${station.station_name}</b><br>🚲 Bikes: ${station.bikes_available}<br>🅿️ Free Docks: ${station.empty_docks}`);
+                    markersLayer.addLayer(marker);
+                }
+            });
+        }
+
+        function filterData() {
+            const query = document.getElementById('search-box').value.toLowerCase();
+            const filtered = allStations.filter(s => s.station_name.toLowerCase().includes(query));
+            renderDashboard(filtered);
+        }
+
+        initMap();
+        fetch('dashboard_data.json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total-count').innerText = data.total_stations;
+                document.getElementById('total-bikes').innerText = data.total_bikes.toLocaleString();
+                document.getElementById('total-docks').innerText = data.total_empty_docks.toLocaleString();
+                
+                allStations = data.stations;
+                renderDashboard(allStations);
+            })
+            .catch(error => {
+                console.error("Error loading dashboard data:", error);
+            });
+    </script>
+</body>
+</html>
